@@ -1,6 +1,5 @@
 package xxx.yyy.zzz;
 
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.eventusermodel.*;
 import org.apache.poi.hssf.eventusermodel.dummyrecord.LastCellOfRowDummyRecord;
@@ -9,9 +8,8 @@ import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.RecordFactoryInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +28,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
     /**
      * Input file stream
      */
-    private FileInputStream fileInputStream;
+    private InputStream fileInputStream;
 
     /**
      * poi file system handler
@@ -45,7 +43,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
     /**
      * Cached cell value of one actual data row.
      */
-    private List<Object> cacheRowCells;
+    private List<Object> cacheRowCells = new ArrayList<>();
 
     /**
      * Data sheet name
@@ -78,16 +76,21 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
     private boolean ifNext = true;
 
     /**
+     * If excel has next record or not.
+     */
+    private boolean hasNext = true;
+
+    /**
      * Open file.
      *
-     * @param file file
-     * @param <E>  data template
+     * @param inputStream input stream
+     * @param <E>         data template
      * @return Excel03Reader
      * @throws IOException IO exception
      */
-    public static <E> Excel03Reader<E> open(File file) throws IOException {
+    public static <E> Excel03Reader<E> open(InputStream inputStream) throws IOException {
         Excel03Reader<E> reader = new Excel03Reader<>();
-        reader.fileInputStream = new FileInputStream(file);
+        reader.fileInputStream = inputStream;
         reader.poifsFileSystem = new POIFSFileSystem(reader.fileInputStream);
         reader.factory = new ELHSSFEventFactory();
         HSSFRequest request = new HSSFRequest();
@@ -138,8 +141,13 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
 
     @Override
     public Optional<T> readRow() {
+        if (!hasNext) {
+            return Optional.empty();
+        }
         ifNext = true;
+        cacheRowCells.clear();
         factory.processEvents(documentInputStream -> {
+            hasNext = false;
             try {
                 fileInputStream.close();
                 poifsFileSystem.close();
@@ -149,6 +157,9 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
                 documentInputStream.close();
             }
         }, () -> ifNext);
+        if (cacheRowCells.isEmpty()) {
+            return Optional.empty();
+        }
         return Optional.ofNullable(null);
     }
 
