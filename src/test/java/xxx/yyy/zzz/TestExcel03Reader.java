@@ -3,11 +3,9 @@ package xxx.yyy.zzz;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
 
 /**
@@ -24,10 +22,8 @@ public class TestExcel03Reader {
      * Test reader
      */
     @Test
-    public void readerTester() throws IOException {
-        Excel03Reader<Map> from = Excel03Reader.open(
-                new BufferedInputStream(
-                        new FileInputStream(new File("D:\\test.xls"))));
+    public void readerTester() {
+        IExcelReader<Map> from = IExcelReader.open(new File("D:\\test.xls"));
         if (from == null)
             return;
         from.readAll();
@@ -38,8 +34,7 @@ public class TestExcel03Reader {
      */
     @Test
     public void excelTypeTester() throws IOException {
-        log.info("xxx: {}", Files.probeContentType(new File("D:\\test.csv").toPath()));
-//        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xls"))));
+        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xlsx"))));
     }
 
 }

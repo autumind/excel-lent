@@ -1,5 +1,9 @@
 package xxx.yyy.zzz;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +17,25 @@ import java.util.Optional;
 interface IExcelReader<T> {
 
     /**
+     * Open excel reader.
+     *
+     * @param file file
+     * @return Excel reader.
+     */
+    static <T> IExcelReader<T> open(File file) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+            ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
+            if (type == ExcelTypeEnum.XLS) {
+                return new Excel03Reader<>(bis);
+            }
+        } catch (IOException e) {
+            throw new FileNotSupportedException("The file is not xls or xlsx or csv, please re-select.");
+        }
+
+        return null;
+    }
+
+    /**
      * Read one row.
      *
      * @return optional one row data.
@@ -20,9 +43,9 @@ interface IExcelReader<T> {
     Optional<T> readRow();
 
     /**
-     * Read rows for specified row number.
+     * Read rows for specified row amount.
      *
-     * @param rowNum row number
+     * @param rowNum row amount
      * @return optional multiple rows.
      */
     Optional<List<T>> readRow(int rowNum);

@@ -1,11 +1,9 @@
 package xxx.yyy.zzz;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.poi.poifs.filesystem.FileMagic;
-import org.apache.poi.util.IOUtils;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * ExcelTypeEnum: Enum of excel type.
@@ -14,15 +12,7 @@ import java.io.*;
  * @since 2019-03-27
  */
 public enum ExcelTypeEnum {
-    XLSX, XLS, CSV(",");
-
-    @Getter
-    @Setter
-    private String separator;
-
-    ExcelTypeEnum(String separator) {
-        this.separator = separator;
-    }
+    XLSX, XLS;
 
     ExcelTypeEnum() {
     }
@@ -39,16 +29,7 @@ public enum ExcelTypeEnum {
             if (FileMagic.OOXML.equals(fileMagic)) {
                 return XLSX;
             }
-
-            // detect if csv
-            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
-                bufferedReader.mark(1);
-                String readLine = bufferedReader.readLine();
-                bufferedReader.reset();
-            } catch (Exception e) {
-
-            }
-            return null;
+            throw new FileNotSupportedException("The file is not xls or xlsx or csv, please re-select.");
         } catch (IOException e) {
             throw new FileNotSupportedException(e);
         }

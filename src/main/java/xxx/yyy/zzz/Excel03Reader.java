@@ -81,43 +81,39 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
     private boolean hasNext = true;
 
     /**
-     * Open file.
+     * Construct excel 2003 reader.
      *
      * @param inputStream input stream
-     * @param <E>         data template
-     * @return Excel03Reader
      * @throws IOException IO exception
      */
-    public static <E> Excel03Reader<E> open(InputStream inputStream) throws IOException {
-        Excel03Reader<E> reader = new Excel03Reader<>();
-        reader.fileInputStream = inputStream;
-        reader.poifsFileSystem = new POIFSFileSystem(reader.fileInputStream);
-        reader.factory = new ELHSSFEventFactory();
+    public Excel03Reader(InputStream inputStream) throws IOException {
+        this.fileInputStream = inputStream;
+        this.poifsFileSystem = new POIFSFileSystem(this.fileInputStream);
+        this.factory = new ELHSSFEventFactory();
         HSSFRequest request = new HSSFRequest();
 
         FormatTrackingHSSFListener formatListener
-                = new FormatTrackingHSSFListener(new MissingRecordAwareHSSFListener(reader));
-        if (reader.outputFormulaValues) {
+                = new FormatTrackingHSSFListener(new MissingRecordAwareHSSFListener(this));
+        if (this.outputFormulaValues) {
             request.addListenerForAllRecords(formatListener);
         } else {
             request.addListenerForAllRecords(new EventWorkbookBuilder.SheetRecordCollectingListener(formatListener));
         }
-        reader.factory.setReq(request);
+        this.factory.setReq(request);
 
-        Set<String> entryNames = reader.poifsFileSystem.getRoot().getEntryNames();
+        Set<String> entryNames = this.poifsFileSystem.getRoot().getEntryNames();
         String name = Stream.of(InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES)
                 .filter(entryNames::contains)
                 .findFirst()
                 .orElse(InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES[0]);
 
-        reader.factory.setDocumentInputStream(reader.poifsFileSystem.createDocumentInputStream(name));
-        reader.factory.setRecordStream(new RecordFactoryInputStream(
-                reader.factory.getDocumentInputStream(), false));
-        return reader;
+        this.factory.setDocumentInputStream(this.poifsFileSystem.createDocumentInputStream(name));
+        this.factory.setRecordStream(new RecordFactoryInputStream(
+                this.factory.getDocumentInputStream(), false));
     }
 
     /**
-     * Set sheet name which needs to be parse.
+     * Set sheet name which needs to be parsed.
      *
      * @param sheetName sheet name
      * @return reader
@@ -160,7 +156,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
         if (cacheRowCells.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(null);
+        return (Optional<T>) Optional.ofNullable(new Object());
     }
 
     @Override
@@ -188,5 +184,6 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
         } else {
             log.info("Record: {}", record);
         }
+        cacheRowCells.add(new Object());
     }
 }
