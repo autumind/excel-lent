@@ -4,8 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,7 +26,8 @@ public class TestExcel03Reader {
         IExcelReader<Map> from = IExcelReader.open(new File("D:\\test.xls"));
         if (from == null)
             return;
-        from.readAll();
+        List<Map> maps = from.readAll().get();
+        System.out.println(maps);
     }
 
     /**
@@ -34,7 +35,9 @@ public class TestExcel03Reader {
      */
     @Test
     public void excelTypeTester() throws IOException {
-        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xlsx"))));
+//        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xlsx"))));
+        IExcelReader<Excel03Reader> open = IExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
+
     }
 
 }

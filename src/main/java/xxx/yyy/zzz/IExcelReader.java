@@ -15,6 +15,27 @@ import java.util.Optional;
  * @since 2019-03-22
  */
 interface IExcelReader<T> {
+    /**
+     * Open excel reader.
+     *
+     * @param file file
+     * @param clz  row class
+     * @return Excel reader.
+     */
+    static <E> IExcelReader<E> open(File file, Class<E> clz) {
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+            ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
+            if (type == ExcelTypeEnum.XLS) {
+                Excel03Reader<E> reader = new Excel03Reader<>(bis);
+                reader.setClz(clz);
+                return reader;
+            }
+        } catch (IOException e) {
+            throw new FileNotSupportedException("The file is not xls or xlsx or csv, please re-select.");
+        }
+
+        return null;
+    }
 
     /**
      * Open excel reader.
@@ -22,17 +43,8 @@ interface IExcelReader<T> {
      * @param file file
      * @return Excel reader.
      */
-    static <T> IExcelReader<T> open(File file) {
-        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-            ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
-            if (type == ExcelTypeEnum.XLS) {
-                return new Excel03Reader<>(bis);
-            }
-        } catch (IOException e) {
-            throw new FileNotSupportedException("The file is not xls or xlsx or csv, please re-select.");
-        }
-
-        return null;
+    static <E> IExcelReader<E> open(File file) {
+        return IExcelReader.open(file, null);
     }
 
     /**
