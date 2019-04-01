@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * IExcelReader: Uniform excel reader interface.
@@ -61,6 +62,20 @@ interface IExcelReader<T> {
      * @return optional multiple rows.
      */
     Optional<List<T>> readRow(int rowNum);
+
+    /**
+     * Iterate excel data one by one and do extra something.
+     *
+     * @param consumer extra operation.
+     */
+    default void iterateThen(Consumer<T> consumer) {
+        Optional<T> optional = readRow();
+        if (!optional.isPresent()) {
+            return;
+        }
+        consumer.accept(optional.get());
+        this.iterateThen(consumer);
+    }
 
     /**
      * Read all rows.

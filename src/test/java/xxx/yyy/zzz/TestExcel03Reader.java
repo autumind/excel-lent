@@ -23,11 +23,11 @@ public class TestExcel03Reader {
      */
     @Test
     public void readerTester() {
-        IExcelReader<Map> from = IExcelReader.open(new File("D:\\test.xls"));
+        IExcelReader<Map<String, Object>> from = IExcelReader.open(new File("D:\\test.xls"));
         if (from == null)
             return;
-        List<Map> maps = from.readAll().get();
-        System.out.println(maps);
+//        List<Map<String, Object>> maps = from.readAll().get();
+        from.iterateThen(System.out::println);
     }
 
     /**

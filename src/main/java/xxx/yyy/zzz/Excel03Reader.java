@@ -388,7 +388,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
             // We're onto a new row
             lastColumnNumber = -1;
         } else {
-            log.info("Record: {}", record);
+//            log.info("Record: {}", record);
         }
     }
 }
