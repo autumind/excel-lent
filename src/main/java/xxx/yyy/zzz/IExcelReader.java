@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * IExcelReader: Uniform excel reader interface.
@@ -15,7 +17,7 @@ import java.util.function.Consumer;
  * @author autumind
  * @since 2019-03-22
  */
-interface IExcelReader<T> {
+interface IExcelReader<T> extends Iterable<T> {
     /**
      * Open excel reader.
      *
@@ -68,6 +70,7 @@ interface IExcelReader<T> {
      *
      * @param consumer extra operation.
      */
+    @Deprecated
     default void iterateThen(Consumer<T> consumer) {
         Optional<T> optional = readRow();
         if (!optional.isPresent()) {
@@ -89,5 +92,14 @@ interface IExcelReader<T> {
             list.add(optional.get());
         }
         return Optional.of(list);
+    }
+
+    /**
+     * Construct stream.
+     *
+     * @return stream.
+     */
+    default Stream<T> stream() {
+        return StreamSupport.stream(spliterator(), false);
     }
 }

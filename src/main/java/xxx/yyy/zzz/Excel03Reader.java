@@ -391,4 +391,19 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
 //            log.info("Record: {}", record);
         }
     }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
+
+            @Override
+            public T next() {
+                return readRow().orElse(null);
+            }
+        };
+    }
 }

@@ -27,7 +27,9 @@ public class TestExcel03Reader {
         if (from == null)
             return;
 //        List<Map<String, Object>> maps = from.readAll().get();
-        from.iterateThen(System.out::println);
+//        from.iterateThen(System.out::println);
+        from.stream().filter(map ->
+                map.getOrDefault("1", "-1").equals("4")).forEach(System.out::println);
     }
 
     /**
