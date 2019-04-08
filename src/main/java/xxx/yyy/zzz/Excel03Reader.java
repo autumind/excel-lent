@@ -201,6 +201,9 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
             }
         }, () -> readNext);
 
+        if (!hasNext) {
+            return Optional.empty();
+        }
         T row = null;
         if (clz == null) {
             HashMap<String, Object> rowMap = new HashMap<>();
@@ -395,14 +398,39 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
+
+            /**
+             * current row.
+             */
+            private T curr;
+
+            /**
+             * previous row.
+             */
+            private T prev;
+
             @Override
             public boolean hasNext() {
+                Optional<T> optional = readRow();
+                hasNext = optional.isPresent();
+                if (hasNext) {
+                    curr = optional.get();
+                }
                 return hasNext;
             }
 
             @Override
             public T next() {
-                return readRow().orElse(null);
+                if (!hasNext) {
+                    throw new NoSuchElementException();
+                } else {
+                    if (curr == null && !hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                }
+                prev = curr;
+                curr = null;
+                return prev;
             }
         };
     }
