@@ -1,6 +1,8 @@
 package xxx.yyy.zzz;
 
+import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.eventusermodel.*;
 import org.apache.poi.hssf.eventusermodel.dummyrecord.LastCellOfRowDummyRecord;
@@ -11,6 +13,7 @@ import org.apache.poi.hssf.record.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -23,12 +26,22 @@ import java.util.stream.Stream;
  * @since 2019-03-22
  */
 @Slf4j
-public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
+public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneable {
+
+    /**
+     * Excel file
+     */
+    @Setter
+    @Getter
+    @Accessors(chain = true)
+    private File file;
 
     /**
      * Row class.
      */
     @Setter
+    @Getter
+    @Accessors(chain = true)
     private Class<T> clz;
 
     /**
@@ -134,29 +147,30 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
      * @throws IOException IO exception
      */
     public Excel03Reader(InputStream inputStream) throws IOException {
-        this.fileInputStream = inputStream;
-        this.poifsFileSystem = new POIFSFileSystem(this.fileInputStream);
-        this.factory = new ELHSSFEventFactory();
+        fileInputStream = inputStream;
+        poifsFileSystem = new POIFSFileSystem(fileInputStream);
+        factory = new ELHSSFEventFactory();
         HSSFRequest request = new HSSFRequest();
 
         formatListener = new FormatTrackingHSSFListener(new MissingRecordAwareHSSFListener(this));
-        if (this.outputFormulaValues) {
+        if (outputFormulaValues) {
             request.addListenerForAllRecords(formatListener);
         } else {
             workbookBuildingListener = new EventWorkbookBuilder.SheetRecordCollectingListener(formatListener);
             request.addListenerForAllRecords(workbookBuildingListener);
         }
-        this.factory.setReq(request);
+        factory.setReq(request);
 
-        Set<String> entryNames = this.poifsFileSystem.getRoot().getEntryNames();
+        Set<String> entryNames = poifsFileSystem.getRoot().getEntryNames();
         String name = Stream.of(InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES)
                 .filter(entryNames::contains)
                 .findFirst()
                 .orElse(InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES[0]);
 
-        this.factory.setDocumentInputStream(this.poifsFileSystem.createDocumentInputStream(name));
-        this.factory.setRecordStream(new RecordFactoryInputStream(
-                this.factory.getDocumentInputStream(), false));
+        factory.setDocumentInputStream(poifsFileSystem.createDocumentInputStream(name));
+        factory.setRecordStream(
+                new RecordFactoryInputStream(
+                        factory.getDocumentInputStream(), false));
     }
 
     /**
@@ -434,4 +448,5 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener {
             }
         };
     }
+
 }

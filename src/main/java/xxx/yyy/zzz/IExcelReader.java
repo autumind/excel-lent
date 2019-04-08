@@ -1,5 +1,7 @@
 package xxx.yyy.zzz;
 
+import org.apache.commons.logging.LogFactory;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,9 +31,7 @@ interface IExcelReader<T> extends Iterable<T> {
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
             ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
             if (type == ExcelTypeEnum.XLS) {
-                Excel03Reader<E> reader = new Excel03Reader<>(bis);
-                reader.setClz(clz);
-                return reader;
+                return new Excel03Reader<E>(bis).setFile(file).setClz(clz);
             }
         } catch (IOException e) {
             throw new FileNotSupportedException("The file is not xls or xlsx or csv, please re-select.");
@@ -100,6 +100,16 @@ interface IExcelReader<T> extends Iterable<T> {
      * @return stream.
      */
     default Stream<T> stream() {
+        if (this instanceof Excel03Reader) {
+            Class<T> clz = ((Excel03Reader<T>) this).getClz();
+            File file = ((Excel03Reader<T>) this).getFile();
+            try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
+                Excel03Reader<T> excel03Reader = new Excel03Reader<T>(bis).setFile(file).setClz(clz);
+                return StreamSupport.stream(excel03Reader.spliterator(), false);
+            } catch (Exception e) {
+                LogFactory.getLog(IExcelReader.class).error("Construct excel reader stream failure.", e);
+            }
+        }
         return StreamSupport.stream(spliterator(), false);
     }
 }

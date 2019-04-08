@@ -28,14 +28,14 @@ public class TestExcel03Reader {
             return;
 //        List<Map<String, Object>> maps = from.readAll().get();
 //        from.iterateThen(System.out::println);
-//        from.stream().filter(map ->
-//                map.getOrDefault("1", "-1").equals("4")).forEach(System.out::println);
-        Iterator<Map<String, Object>> iterator = from.iterator();
-        System.out.println(iterator.next());
-        System.out.println(iterator.next());
-        System.out.println(iterator.next());
-        System.out.println(iterator.next());
-        System.out.println(iterator.next());
+        from.stream().filter(map ->
+                map.getOrDefault("1", "-1").equals("4")).forEach(System.out::println);
+//        Iterator<Map<String, Object>> iterator = from.iterator();
+//        System.out.println(iterator.next());
+//        System.out.println(iterator.next());
+//        System.out.println(iterator.next());
+//        System.out.println(iterator.next());
+//        System.out.println(iterator.next());
     }
 
     /**
