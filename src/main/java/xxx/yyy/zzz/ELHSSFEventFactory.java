@@ -50,7 +50,7 @@ public class ELHSSFEventFactory extends HSSFEventFactory {
     public void processEvents(Consumer<DocumentInputStream> consumer, Supplier<Boolean> ifNext) {
 
         try {
-            do {
+            while (ifNext.get()) {
                 Record record = recordStream.nextRecord();
                 if (record == null) {
                     consumer.accept(documentInputStream);
@@ -65,7 +65,7 @@ public class ELHSSFEventFactory extends HSSFEventFactory {
                 Method method = methodOptional.get();
                 method.setAccessible(true);
                 method.invoke(req, record);
-            } while (ifNext.get());
+            }
         } catch (Exception e) {
             log.error("Process Excel 2003 failure.", e);
         }

@@ -60,6 +60,11 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
     private List<T> cacheRows;
 
     /**
+     * Current data row.
+     */
+    private T currentRow;
+
+    /**
      * Cached cell value of one actual data row.
      */
     private List<Object> cacheRowCells = new ArrayList<>();
@@ -124,7 +129,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
     /**
      * Sheet index.
      */
-    private int sheetIndex = -1;
+    private int sheetIndex = 0;
 
     /**
      * Parsed sheets.
@@ -196,13 +201,11 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Optional<T> readRow() {
         if (!hasNext) {
             return Optional.empty();
         }
         readNext = true;
-        cacheRowCells.clear();
         factory.processEvents(documentInputStream -> {
             hasNext = false;
             try {
@@ -218,17 +221,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
         if (!hasNext) {
             return Optional.empty();
         }
-        T row = null;
-        if (clz == null) {
-            HashMap<String, Object> rowMap = new HashMap<>();
-            for (int i = 0; i < cacheRowCells.size(); i++) {
-                rowMap.put(String.valueOf(i + 1), cacheRowCells.get(i));
-            }
-            row = (T) rowMap;
-        } else {
-            // TODO
-        }
-        return Optional.ofNullable(row);
+        return Optional.ofNullable(currentRow);
     }
 
     @Override
@@ -249,6 +242,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void processRecord(Record record) {
         int thisRow = -1;
         int thisColumn = -1;
@@ -404,9 +398,21 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
             readNext = false;
             // We're onto a new row
             lastColumnNumber = -1;
+
+            currentRow = null;
+            if (clz == null) {
+                HashMap<String, Object> rowMap = new HashMap<>();
+                for (int i = 0; i < cacheRowCells.size(); i++) {
+                    rowMap.put(String.valueOf(i + 1), cacheRowCells.get(i));
+                }
+                currentRow = (T) rowMap;
+            } else {
+                // TODO
+            }
+            cacheRowCells.clear();
         } else {
-//            log.info("Record: {}", record);
         }
+//        log.info("Record: {}", record);
     }
 
     @Override
