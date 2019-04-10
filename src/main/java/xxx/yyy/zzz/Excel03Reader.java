@@ -403,7 +403,7 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
             if (clz == null) {
                 HashMap<String, Object> rowMap = new HashMap<>();
                 for (int i = 0; i < cacheRowCells.size(); i++) {
-                    rowMap.put(String.valueOf(i + 1), cacheRowCells.get(i));
+                    rowMap.put(convertNumber2Letter(i), cacheRowCells.get(i));
                 }
                 currentRow = (T) rowMap;
             } else {
@@ -455,4 +455,25 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
         };
     }
 
+    /**
+     * Convert non-negative number which less than 676 to letter.
+     *
+     * @param i non-negative number
+     * @return letter
+     */
+    private String convertNumber2Letter(int i) {
+        if (i < 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if ((i + 1) / 26 > 26) {
+            throw new IllegalArgumentException("Too many columns, please decrease some useless column and retry.");
+        }
+
+        if (i / 26 == 0) {
+            return String.valueOf((char) (i + 65));
+        } else {
+            return String.valueOf((char) (i / 26 + 64)).concat(String.valueOf((char) (i % 26 + 65)));
+        }
+    }
 }

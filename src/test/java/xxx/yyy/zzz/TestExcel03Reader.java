@@ -21,7 +21,7 @@ public class TestExcel03Reader {
      * Test reader
      */
     @Test
-    public void readerTester() {
+    public void readerTest() {
         IExcelReader<Map<String, Object>> from = IExcelReader.open(new File("D:\\test.xls"));
         if (from == null)
             return;
@@ -40,10 +40,18 @@ public class TestExcel03Reader {
      * Test excel type
      */
     @Test
-    public void excelTypeTester() throws IOException {
+    public void excelTypeTest() throws IOException {
 //        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xlsx"))));
         IExcelReader<Excel03Reader> open = IExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
 
+    }
+
+    /**
+     * Test method of converting number to letter.
+     */
+    @Test
+    public void number2LetterTest() {
+//        log.info(Excel03Reader.convertNumber2Letter(53));
     }
 
 }
