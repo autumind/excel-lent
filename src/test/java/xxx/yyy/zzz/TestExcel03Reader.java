@@ -5,7 +5,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * TestExcel03Reader: Excel 2003 reader test cases.
@@ -22,7 +21,7 @@ public class TestExcel03Reader {
      */
     @Test
     public void readerTest() {
-        IExcelReader<Map<String, Object>> from = IExcelReader.open(new File("D:\\test.xls"));
+        ExcelReader<Excel03Reader> from = ExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
         if (from == null)
             return;
 //        List<Map<String, Object>> maps = from.readAll().get();
@@ -42,7 +41,7 @@ public class TestExcel03Reader {
     @Test
     public void excelTypeTest() throws IOException {
 //        log.info("Excel type: {}", ExcelTypeEnum.valueOf(new FileInputStream(new File("D:\\test.xlsx"))));
-        IExcelReader<Excel03Reader> open = IExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
+        ExcelReader<Excel03Reader> open = ExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
 
     }
 

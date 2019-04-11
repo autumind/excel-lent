@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
  * @since 2019-03-22
  */
 @Slf4j
-public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneable {
+public class Excel03Reader<T> extends AbstractExcelReader<T> implements HSSFListener, Cloneable {
 
     /**
      * Excel file
@@ -68,21 +69,6 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
      * Cached cell value of one actual data row.
      */
     private List<Object> cacheRowCells = new ArrayList<>();
-
-    /**
-     * Data sheet name
-     */
-    private String sheetName;
-
-    /**
-     * Data head.
-     */
-    private List<String> heads;
-
-    /**
-     * Data head row index. -1 represents no head information.
-     */
-    private int headRowIndex = -1;
 
     /**
      * Should we output the formula, or the value it has?
@@ -178,33 +164,12 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
                         factory.getDocumentInputStream(), false));
     }
 
-    /**
-     * Set sheet name which needs to be parsed.
-     *
-     * @param sheetName sheet name
-     * @return reader
-     */
-    public Excel03Reader<T> sheetName(String sheetName) {
-        this.sheetName = sheetName;
-        return this;
-    }
-
-    /**
-     * Set index of head row.
-     *
-     * @param headRowIndex head row index
-     * @return reader
-     */
-    public Excel03Reader<T> headRow(int headRowIndex) {
-        this.headRowIndex = headRowIndex;
-        return this;
-    }
-
     @Override
     public Optional<T> readRow() {
         if (!hasNext) {
             return Optional.empty();
         }
+
         readNext = true;
         factory.processEvents(documentInputStream -> {
             hasNext = false;
@@ -399,6 +364,16 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
             // We're onto a new row
             lastColumnNumber = -1;
 
+            if (hasHead && heads.isEmpty()) {
+                if (cacheRowCells.isEmpty()) {
+                    throw new RuntimeException("Headed excel must has data in first row.");
+                }
+                heads.addAll(cacheRowCells.stream().map(String::valueOf).collect(Collectors.toList()));
+                readNext = true;
+                cacheRowCells.clear();
+                return;
+            }
+
             currentRow = null;
             if (clz == null) {
                 HashMap<String, Object> rowMap = new HashMap<>();
@@ -407,12 +382,11 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
                 }
                 currentRow = (T) rowMap;
             } else {
-                // TODO
+                currentRow = converter.convert(cacheRowCells, clz);
             }
+
             cacheRowCells.clear();
-        } else {
         }
-//        log.info("Record: {}", record);
     }
 
     @Override
@@ -453,27 +427,5 @@ public class Excel03Reader<T> implements IExcelReader<T>, HSSFListener, Cloneabl
                 return prev;
             }
         };
-    }
-
-    /**
-     * Convert non-negative number which less than 676 to letter.
-     *
-     * @param i non-negative number
-     * @return letter
-     */
-    private String convertNumber2Letter(int i) {
-        if (i < 0) {
-            throw new IllegalArgumentException();
-        }
-
-        if ((i + 1) / 26 > 26) {
-            throw new IllegalArgumentException("Too many columns, please decrease some useless column and retry.");
-        }
-
-        if (i / 26 == 0) {
-            return String.valueOf((char) (i + 65));
-        } else {
-            return String.valueOf((char) (i / 26 + 64)).concat(String.valueOf((char) (i % 26 + 65)));
-        }
     }
 }

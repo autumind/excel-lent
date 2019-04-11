@@ -14,12 +14,13 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * IExcelReader: Uniform excel reader interface.
+ * ExcelReader: Uniform excel reader interface.
  *
  * @author autumind
  * @since 2019-03-22
  */
-interface IExcelReader<T> extends Iterable<T> {
+interface ExcelReader<T> extends Iterable<T> {
+
     /**
      * Open excel reader.
      *
@@ -27,7 +28,7 @@ interface IExcelReader<T> extends Iterable<T> {
      * @param clz  row class
      * @return Excel reader.
      */
-    static <E> IExcelReader<E> open(File file, Class<E> clz) {
+    static <E> ExcelReader<E> open(File file, Class<E> clz) {
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
             ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
             if (type == ExcelTypeEnum.XLS) {
@@ -46,9 +47,24 @@ interface IExcelReader<T> extends Iterable<T> {
      * @param file file
      * @return Excel reader.
      */
-    static <E> IExcelReader<E> open(File file) {
-        return IExcelReader.open(file, null);
+    static <E> ExcelReader<E> open(File file) {
+        return ExcelReader.open(file, null);
     }
+
+    /**
+     * Set sheet name which needs to be parsed.
+     *
+     * @param sheetName sheet name
+     * @return reader
+     */
+    ExcelReader<T> sheetName(String sheetName);
+
+    /**
+     * Flag excel has head.
+     *
+     * @return reader
+     */
+    ExcelReader<T> withHead();
 
     /**
      * Read one row.
@@ -107,7 +123,7 @@ interface IExcelReader<T> extends Iterable<T> {
                 Excel03Reader<T> excel03Reader = new Excel03Reader<T>(bis).setFile(file).setClz(clz);
                 return StreamSupport.stream(excel03Reader.spliterator(), false);
             } catch (Exception e) {
-                LogFactory.getLog(IExcelReader.class).error("Construct excel reader stream failure.", e);
+                LogFactory.getLog(ExcelReader.class).error("Construct excel reader stream failure.", e);
             }
         }
         return StreamSupport.stream(spliterator(), false);
