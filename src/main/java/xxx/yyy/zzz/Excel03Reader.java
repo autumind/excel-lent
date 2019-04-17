@@ -1,8 +1,5 @@
 package xxx.yyy.zzz;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.eventusermodel.*;
 import org.apache.poi.hssf.eventusermodel.dummyrecord.LastCellOfRowDummyRecord;
@@ -13,11 +10,12 @@ import org.apache.poi.hssf.record.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -28,22 +26,6 @@ import java.util.stream.Stream;
  */
 @Slf4j
 public class Excel03Reader<T> extends AbstractExcelReader<T> implements HSSFListener, Cloneable {
-
-    /**
-     * Excel file
-     */
-    @Setter
-    @Getter
-    @Accessors(chain = true)
-    private File file;
-
-    /**
-     * Row class.
-     */
-    @Setter
-    @Getter
-    @Accessors(chain = true)
-    private Class<T> clz;
 
     /**
      * Input file stream
@@ -378,11 +360,22 @@ public class Excel03Reader<T> extends AbstractExcelReader<T> implements HSSFList
             if (clz == null) {
                 HashMap<String, Object> rowMap = new HashMap<>();
                 for (int i = 0; i < cacheRowCells.size(); i++) {
-                    rowMap.put(convertNumber2Letter(i), cacheRowCells.get(i));
+                    if (hasHead) {
+                        rowMap.put(heads.get(i), cacheRowCells.get(i));
+                    } else {
+                        rowMap.put(convertNumber2Letter(i), cacheRowCells.get(i));
+                    }
                 }
                 currentRow = (T) rowMap;
             } else {
-                currentRow = converter.convert(cacheRowCells, clz);
+                if (hasHead) {
+                    Map<String, Integer> headIndex = IntStream.range(0, heads.size())
+                            .boxed()
+                            .collect(Collectors.toMap(heads::get, Function.identity()));
+                    currentRow = converter.convert(headIndex, cacheRowCells, clz);
+                } else {
+                    // TODO setting cell value with field order in class.
+                }
             }
 
             cacheRowCells.clear();

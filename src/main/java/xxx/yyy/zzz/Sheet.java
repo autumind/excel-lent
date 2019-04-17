@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * Sheet: Excel sheet.
+ * Sheet: ExcelField sheet.
  *
  * @author autumind
  * @since 2019-03-28

@@ -67,7 +67,7 @@ public class ELHSSFEventFactory extends HSSFEventFactory {
                 method.invoke(req, record);
             }
         } catch (Exception e) {
-            log.error("Process Excel 2003 failure.", e);
+            log.error("Process ExcelField 2003 failure.", e);
         }
     }
 

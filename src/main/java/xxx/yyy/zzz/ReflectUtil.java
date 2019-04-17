@@ -2,6 +2,9 @@ package xxx.yyy.zzz;
 
 import lombok.experimental.UtilityClass;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 /**
  * ReflectUtil: Reflection util.
  *
@@ -40,4 +43,14 @@ public class ReflectUtil {
         return resolveGenericType(targetClz, 0);
     }
 
+    /**
+     * Resolve field setter in class.
+     *
+     * @param field class field info
+     * @param clz   target class.
+     * @return field setter.
+     */
+    public static Method resolveSetter(Field field, Class clz) {
+        return null;
+    }
 }

@@ -26,7 +26,7 @@ interface ExcelReader<T> extends Iterable<T> {
      *
      * @param file file
      * @param clz  row class
-     * @return Excel reader.
+     * @return ExcelField reader.
      */
     static <E> ExcelReader<E> open(File file, Class<E> clz) {
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
@@ -45,7 +45,7 @@ interface ExcelReader<T> extends Iterable<T> {
      * Open excel reader.
      *
      * @param file file
-     * @return Excel reader.
+     * @return ExcelField reader.
      */
     static <E> ExcelReader<E> open(File file) {
         return ExcelReader.open(file, null);
@@ -120,7 +120,9 @@ interface ExcelReader<T> extends Iterable<T> {
             Class<T> clz = ((Excel03Reader<T>) this).getClz();
             File file = ((Excel03Reader<T>) this).getFile();
             try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file))) {
-                Excel03Reader<T> excel03Reader = new Excel03Reader<T>(bis).setFile(file).setClz(clz);
+                Excel03Reader<T> excel03Reader = new Excel03Reader<>(bis);
+                excel03Reader.setFile(file);
+                excel03Reader.setClz(clz);
                 return StreamSupport.stream(excel03Reader.spliterator(), false);
             } catch (Exception e) {
                 LogFactory.getLog(ExcelReader.class).error("Construct excel reader stream failure.", e);

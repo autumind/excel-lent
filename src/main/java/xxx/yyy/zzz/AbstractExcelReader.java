@@ -1,7 +1,11 @@
 package xxx.yyy.zzz;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +17,23 @@ import java.util.List;
  */
 @Data
 public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
+
+    /**
+     * ExcelField file
+     */
+    @Setter
+    @Getter
+    @Accessors(chain = true)
+    protected File file;
+
+    /**
+     * Row class.
+     */
+    @Setter
+    @Getter
+    @Accessors(chain = true)
+    protected Class<T> clz;
+
     /**
      * Data sheet name
      */
