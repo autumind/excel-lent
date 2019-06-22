@@ -101,9 +101,9 @@ public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
         }
 
         if (i / 26 == 0) {
-            return String.valueOf((char) (i + 65));
+            return String.valueOf((char) (i + 'A'));
         } else {
-            return String.valueOf((char) (i / 26 + 64)).concat(String.valueOf((char) (i % 26 + 65)));
+            return String.valueOf((char) (i / 26 + 'A' - 1)).concat(String.valueOf((char) (i % 26 + 'A')));
         }
     }
 }

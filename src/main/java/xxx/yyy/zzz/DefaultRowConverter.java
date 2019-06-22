@@ -25,6 +25,9 @@ public enum DefaultRowConverter implements RowConverter {
      */
     INSTANCE;
 
+    /**
+     * Class titled method cache.
+     */
     private ConcurrentMap<String, List<TitledMethod>> classSetterCache = new ConcurrentHashMap<>();
 
     @Override

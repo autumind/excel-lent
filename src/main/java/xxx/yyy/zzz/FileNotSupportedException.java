@@ -13,6 +13,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class FileNotSupportedException extends RuntimeException {
 
+    private static final long serialVersionUID = 1L;
+
     public FileNotSupportedException() {
     }
 

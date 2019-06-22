@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -51,8 +52,10 @@ public class TestExcel03Reader {
      * Test method of converting number to letter.
      */
     @Test
-    public void number2LetterTest() {
+    public void number2LetterTest() throws NoSuchFieldException {
 //        log.info(Excel03Reader.convertNumber2Letter(53));
+//        Method method = ReflectUtil.resolveSetter(TestBean.class.getDeclaredField("id"), TestBean.class);
+//        log.info("{}", method);
     }
 
     @Data
