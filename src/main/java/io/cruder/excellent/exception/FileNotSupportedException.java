@@ -1,4 +1,4 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.exception;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -6,7 +6,7 @@ import lombok.EqualsAndHashCode;
 /**
  * FileNotSupportedException: Exception of not supported file.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-03-27
  */
 @Data

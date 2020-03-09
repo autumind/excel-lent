@@ -1,4 +1,4 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.util;
 
 import java.util.List;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * RowConverter: Row data converter.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-04-11
  */
 public interface RowConverter {

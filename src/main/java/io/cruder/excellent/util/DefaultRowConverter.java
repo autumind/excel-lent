@@ -1,5 +1,6 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.util;
 
+import io.cruder.excellent.ExcelField;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * DefaultRowConverter: Default implement of row data converter.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-04-11
  */
 @Slf4j
@@ -45,7 +46,7 @@ public enum DefaultRowConverter implements RowConverter {
                         .filter(field -> field.isAnnotationPresent(ExcelField.class))
                         .map(field -> new TitledMethod()
                                 .setTitle(field.getAnnotation(ExcelField.class).title())
-                                .setMethod(ReflectUtil.resolveSetter(field, clz)))
+                                .setMethod(Reflects.resolveSetter(field, clz)))
                         .collect(Collectors.toList());
                 classSetterCache.put(cachedKey, titledMethods);
             }
@@ -80,7 +81,7 @@ public enum DefaultRowConverter implements RowConverter {
     /**
      * TitledMethod: Titled method which associated with excel field.
      *
-     * @author autumind
+     * @author cruder
      * @since 2019-04-11
      */
     @Data

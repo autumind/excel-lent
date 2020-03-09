@@ -1,19 +1,21 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.util;
 
 import lombok.experimental.UtilityClass;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.stream.Stream;
 
 /**
- * ReflectUtil: Reflection util.
+ * Reflects: Reflection util.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-03-29
  */
 @UtilityClass
-public class ReflectUtil {
+public class Reflects {
 
     /**
      * Common setter name prefix string.
@@ -23,20 +25,26 @@ public class ReflectUtil {
     /**
      * Resolve generic type
      *
-     * @param targetClz target class
+     * @param targetClazz target class
      * @param typeIndex generic type parameter index of target class
      * @return generic type
      */
-    @Deprecated
-    public static Class resolveGenericType(Class targetClz, int typeIndex) {
-        if (targetClz == null) {
+    public static Type resolveGenericType(Class targetClazz, int typeIndex) {
+        if (targetClazz == null) {
             return null;
         }
 
         if (typeIndex < 0) {
             return null;
         }
-        return Object.class;
+
+        Type[] actualTypeArguments = ((ParameterizedType) targetClazz
+                .getGenericSuperclass()).getActualTypeArguments();
+
+        if (actualTypeArguments == null || typeIndex > actualTypeArguments.length) {
+            return null;
+        }
+        return actualTypeArguments[typeIndex];
     }
 
 
@@ -46,8 +54,7 @@ public class ReflectUtil {
      * @param targetClz target class
      * @return generic type
      */
-    @Deprecated
-    public static Class resolveGenericType(Class targetClz) {
+    public static Type resolveGenericType(Class targetClz) {
         return resolveGenericType(targetClz, 0);
     }
 

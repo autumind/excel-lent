@@ -1,4 +1,4 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * ExcelField: Annotation of excel field.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-04-17
  */
 @Retention(RetentionPolicy.RUNTIME)

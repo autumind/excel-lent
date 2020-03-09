@@ -1,4 +1,4 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.pojo;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 /**
  * Sheet: ExcelField sheet.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-03-28
  */
 @Data

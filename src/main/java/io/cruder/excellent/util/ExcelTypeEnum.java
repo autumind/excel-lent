@@ -1,5 +1,6 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent.util;
 
+import io.cruder.excellent.exception.FileNotSupportedException;
 import org.apache.poi.poifs.filesystem.FileMagic;
 
 import java.io.IOException;
@@ -8,11 +9,19 @@ import java.io.InputStream;
 /**
  * ExcelTypeEnum: Enum of excel type.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-03-27
  */
 public enum ExcelTypeEnum {
-    XLSX, XLS;
+    /**
+     * XSSF
+     */
+    XLSX,
+
+    /**
+     * HSSF
+     */
+    XLS;
 
     ExcelTypeEnum() {
     }

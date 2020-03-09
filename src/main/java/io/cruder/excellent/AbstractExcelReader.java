@@ -1,30 +1,24 @@
-package xxx.yyy.zzz;
+package io.cruder.excellent;
 
+import io.cruder.excellent.util.DefaultRowConverter;
+import io.cruder.excellent.util.RowConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import org.apache.poi.hssf.eventusermodel.HSSFListener;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * AbstractExcelReader: Abstract implement excel reader.
  *
- * @author autumind
+ * @author cruder
  * @since 2019-04-11
  */
 @Data
-public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
-
-    /**
-     * ExcelField file
-     */
-    @Setter
-    @Getter
-    @Accessors(chain = true)
-    protected File file;
+public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> {
 
     /**
      * Row class.
@@ -32,12 +26,7 @@ public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
     @Setter
     @Getter
     @Accessors(chain = true)
-    protected Class<T> clz;
-
-    /**
-     * Data sheet name
-     */
-    protected String sheetName;
+    protected Class<T> parameterType;
 
     /**
      * Data head.
@@ -55,21 +44,16 @@ public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
     protected RowConverter converter = DefaultRowConverter.INSTANCE;
 
     /**
-     * Set sheet name which needs to be parsed.
-     *
-     * @param sheetName sheet name
-     * @return reader
+     * Numbers of alphabetic letter.
      */
-    public AbstractExcelReader<T> sheetName(String sheetName) {
-        this.sheetName = sheetName;
-        return this;
-    }
+    private final int ALPHABETIC_LETTER_NUMBERS = 26;
 
     /**
      * Flag excel has head.
      *
      * @return reader
      */
+    @Override
     public AbstractExcelReader<T> withHead() {
         this.hasHead = true;
         return this;
@@ -96,14 +80,14 @@ public abstract class AbstractExcelReader<T> implements ExcelReader<T> {
             throw new IllegalArgumentException();
         }
 
-        if ((i + 1) / 26 > 26) {
+        if ((i + 1) / ALPHABETIC_LETTER_NUMBERS > ALPHABETIC_LETTER_NUMBERS) {
             throw new IllegalArgumentException("Too many columns, please decrease some useless column and retry.");
         }
 
-        if (i / 26 == 0) {
+        if (i / ALPHABETIC_LETTER_NUMBERS == 0) {
             return String.valueOf((char) (i + 'A'));
         } else {
-            return String.valueOf((char) (i / 26 + 'A' - 1)).concat(String.valueOf((char) (i % 26 + 'A')));
+            return String.valueOf((char) (i / ALPHABETIC_LETTER_NUMBERS + 'A' - 1)).concat(String.valueOf((char) (i % 26 + 'A')));
         }
     }
 }
