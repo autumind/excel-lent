@@ -18,7 +18,6 @@ package io.cruder.excellent.hssf;
 import io.cruder.excellent.AbstractExcelReader;
 import io.cruder.excellent.hssf.eventusermodel.HssfEventFactory;
 import io.cruder.excellent.hssf.eventusermodel.HssfRequest;
-import io.cruder.excellent.util.Reflects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.eventusermodel.EventWorkbookBuilder.SheetRecordCollectingListener;
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
@@ -32,7 +31,9 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * io.cruder.excellent.hssf.XLS2CSVmra: Description of this class.
@@ -43,51 +44,44 @@ import java.util.*;
 @Slf4j
 public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
 
+    private final HssfEventFactory HSSF;
     /**
      * Should we output the formula, or the value it has?
      */
     private boolean outputFormulaValues = true;
-
     /**
      * For parsing Formulas
      */
     private SheetRecordCollectingListener workbookBuildingListener;
     private HSSFWorkbook stubWorkbook;
-
     /**
      * Records we pick up as we process
      */
     private SSTRecord sstRecord;
     private FormatTrackingHSSFListener formatListener;
-
     /**
      * So we known which sheet we're on
      */
     private int sheetIndex = -1;
     private BoundSheetRecord[] orderedBsrArray;
     private List<BoundSheetRecord> boundSheetRecords = new ArrayList<>();
-
     /**
      * For handling formulas with string results
      */
     private boolean outputNextStringRecord;
-
     /**
-     * Cached one row's cell value.
+     * A row.
      */
+    private int rowIndex = 0;
     private List<String> rowCells = new ArrayList<>();
-    /**
-     * Current row.
-     */
     private T currRow;
-    private HssfEventFactory hssf;
 
     /**
      * Creates a new XLS -> CSV converter
      *
-     * @param fs The POIFSFileSystem to process
+     * @param fs    The POIFSFileSystem to process
+     * @param clazz generic class
      */
-    @SuppressWarnings("unchecked")
     public XlsReader(POIFSFileSystem fs, Class<T> clazz) {
         MissingRecordAwareHSSFListener listener = new MissingRecordAwareHSSFListener(this);
         formatListener = new FormatTrackingHSSFListener(listener);
@@ -98,21 +92,30 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
             workbookBuildingListener = new SheetRecordCollectingListener(formatListener);
             request.addListenerForAllRecords(workbookBuildingListener);
         }
-        hssf = new HssfEventFactory(request, fs);
-        if (clazz == null) {
-            parameterType = (Class<T>) Reflects.resolveGenericType(getClass());
-        }
+        HSSF = new HssfEventFactory(request, fs);
+        parameterizedType = clazz;
+    }
+
+    /**
+     * Creates a new XLS reader.
+     *
+     * @param inputStream input stream
+     * @param clazz       generic class
+     * @throws IOException IO exception
+     */
+    public XlsReader(InputStream inputStream, Class<T> clazz) throws IOException {
+        this(new POIFSFileSystem(inputStream), clazz);
     }
 
     /**
      * Creates a new XLS reader.
      *
      * @param filename The file to process
-     * @param clazz    parameterized type
+     * @param clazz    generic class
      * @throws IOException IO exception
      */
     public XlsReader(String filename, Class<T> clazz) throws IOException {
-        this(new POIFSFileSystem(new FileInputStream(filename)), clazz);
+        this(new FileInputStream(filename), clazz);
     }
 
     @Override
@@ -139,7 +142,9 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                     if (orderedBsrArray == null) {
                         orderedBsrArray = BoundSheetRecord.orderByBofPosition(boundSheetRecords);
                     }
-                    log.info(orderedBsrArray[sheetIndex].getSheetname() + " [" + (sheetIndex + 1) + "]:");
+                    HSSF.entryFirstRow();
+                    rowIndex = 0;
+//                    log.info(orderedBsrArray[sheetIndex].getSheetname() + " [" + (sheetIndex + 1) + "]:");
                 }
                 break;
 
@@ -165,8 +170,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                         cellValue = formatListener.formatNumberDateCell(frec);
                     }
                 } else {
-                    cellValue = '"' +
-                            HSSFFormulaParser.toFormulaString(stubWorkbook, frec.getParsedExpression()) + '"';
+                    cellValue = HSSFFormulaParser.toFormulaString(stubWorkbook, frec.getParsedExpression());
                 }
                 break;
             case StringRecord.sid:
@@ -181,7 +185,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
             case LabelRecord.sid:
                 LabelRecord lrec = (LabelRecord) record;
 
-                cellValue = '"' + lrec.getValue() + '"';
+                cellValue = lrec.getValue();
                 break;
             case LabelSSTRecord.sid:
                 LabelSSTRecord lsrec = (LabelSSTRecord) record;
@@ -189,10 +193,11 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                 if (sstRecord == null) {
                     cellValue = '"' + "(No SST Record, can't identify string)" + '"';
                 } else {
-                    cellValue = '"' + sstRecord.getString(lsrec.getSSTIndex()).toString() + '"';
+                    cellValue = sstRecord.getString(lsrec.getSSTIndex()).toString();
                 }
                 break;
             case NoteRecord.sid:
+            case RKRecord.sid:
 
                 // TODO: Find object to match nrec.getShapeId()
                 cellValue = '"' + "(TODO)" + '"';
@@ -203,17 +208,12 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                 // Format
                 cellValue = formatListener.formatNumberDateCell(numrec);
                 break;
-            case RKRecord.sid:
-
-                cellValue = '"' + "(TODO)" + '"';
-                break;
             default:
                 break;
         }
 
         // Handle missing column
         if (record instanceof MissingCellDummyRecord) {
-            MissingCellDummyRecord mc = (MissingCellDummyRecord) record;
             cellValue = "";
         }
 
@@ -222,82 +222,39 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
             rowCells.add(cellValue);
         }
 
-        // Update column and row count
-
         // Handle end of row
         if (record instanceof LastCellOfRowDummyRecord) {
 
             // We're onto a new row
-            hssf.abort();
+            rowIndex++;
+            HSSF.abort();
             // End the row
-            log.info("{}", rowCells);
-            // Convert cell to entity.
-            currRow = (T) new Object();
+            if (firstRowAsHeader && HSSF.isFirstRow() && sheetIndex == 0) {
+                headers.addAll(rowCells);
+            } else {
+                // Convert cell to entity.
+                currRow = converter.convert(headers, rowCells, parameterizedType);
+            }
             rowCells.clear();
         }
 
     }
 
     @Override
-    public Optional<T> readRow() {
-        boolean hasNext = hssf.hasNext();
+    public T doRead() {
+        boolean hasNext = HSSF.hasNext();
         if (hasNext) {
-            hssf.nextRow();
-            return Optional.ofNullable(currRow);
-        }
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<List<T>> readRow(int rowNum) {
-        List<T> cacheRows = new ArrayList<>();
-        for (int i = 0; i < rowNum; i++) {
-            Optional<T> optional = readRow();
-            if (!optional.isPresent()) {
-                break;
-            }
-            cacheRows.add(optional.get());
-        }
-        return Optional.of(cacheRows);
-    }
-
-    @Override
-    public Iterator<T> iterator() {
-        return new Iterator<T>() {
-
-            /**
-             * current row.
-             */
-            private T curr;
-
-            /**
-             * If there is next record.
-             */
-            private boolean hasNext = true;
-
-            @Override
-            public boolean hasNext() {
-                Optional<T> optional = readRow();
-                hasNext = optional.isPresent();
-                if (hasNext) {
-                    curr = optional.get();
+            HSSF.process();
+            if (HSSF.isFirstRow()) {
+                HSSF.leaveFirstRow();
+                if (firstRowAsHeader) {
+                    HSSF.process();
                 }
-                return hasNext;
             }
-
-            @Override
-            public T next() {
-                if (!hasNext) {
-                    throw new NoSuchElementException();
-                } else {
-                    if (curr == null && !hasNext()) {
-                        throw new NoSuchElementException();
-                    }
-                }
-                T prev = curr;
-                curr = null;
-                return prev;
-            }
-        };
+            T ret = currRow;
+            currRow = null;
+            return ret;
+        }
+        return null;
     }
 }

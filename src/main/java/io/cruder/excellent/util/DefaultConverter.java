@@ -15,27 +15,30 @@
 
 package io.cruder.excellent.util;
 
-import io.cruder.excellent.ExcelField;
+import io.cruder.excellent.Column;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * DefaultRowConverter: Default implement of row data converter.
+ * DefaultConverter: Default implement of row data converter.
  *
  * @author cruder
  * @since 2019-04-11
  */
 @Slf4j
-public enum DefaultRowConverter implements RowConverter {
+public enum DefaultConverter implements Converter {
     /**
      * Singleton Converter
      */
@@ -47,21 +50,32 @@ public enum DefaultRowConverter implements RowConverter {
     private ConcurrentMap<String, List<TitledMethod>> classSetterCache = new ConcurrentHashMap<>();
 
     @Override
-    public <T> T convert(Map<String, Integer> headIndex, List<Object> rowCells, Class<T> clz) {
+    @SuppressWarnings("unchecked")
+    public <T> T convert(List<String> headers, List<String> rowCells, Class<T> clazz) {
         T bean = null;
+        Map<String, Integer> headerIndex = IntStream.range(0, headers.size())
+                .boxed()
+                .collect(Collectors.toMap(headers::get, Function.identity()));
         try {
-            bean = clz.newInstance();
 
-            String cachedKey = clz.getName();
+            if (clazz == null) {
+                Map<String, String> map = new LinkedHashMap<>();
+                headerIndex.forEach((header, index) -> map.put(header, rowCells.size() > index ? rowCells.get(index) : ""));
+                return (T) map;
+            }
+
+            bean = clazz.newInstance();
+
+            String cachedKey = clazz.getName();
             List<TitledMethod> titledMethods;
             if (classSetterCache.containsKey(cachedKey) && classSetterCache.get(cachedKey) != null) {
                 titledMethods = classSetterCache.get(cachedKey);
             } else {
-                titledMethods = Stream.of(clz.getDeclaredFields())
-                        .filter(field -> field.isAnnotationPresent(ExcelField.class))
+                titledMethods = Stream.of(clazz.getDeclaredFields())
+                        .filter(field -> field.isAnnotationPresent(Column.class))
                         .map(field -> new TitledMethod()
-                                .setTitle(field.getAnnotation(ExcelField.class).title())
-                                .setMethod(Reflects.resolveSetter(field, clz)))
+                                .setTitle(field.getAnnotation(Column.class).title())
+                                .setMethod(Reflects.resolveSetter(field, clazz)))
                         .collect(Collectors.toList());
                 classSetterCache.put(cachedKey, titledMethods);
             }
@@ -78,7 +92,7 @@ public enum DefaultRowConverter implements RowConverter {
                     throw new RuntimeException(String.format("Method %s is not a setter.", method.getName()));
                 }
                 Class parameterType = parameterTypes[0];
-                Object val = rowCells.get(headIndex.get(titledMethod.getTitle()));
+                Object val = rowCells.get(headerIndex.get(titledMethod.getTitle()));
                 if (val != null) {
                     // invoke setter only when cell value is not null.
                     if (parameterType.equals(String.class)) {

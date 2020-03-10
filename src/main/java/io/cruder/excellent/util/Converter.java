@@ -13,30 +13,27 @@
  *
  */
 
-package io.cruder.excellent;
+package io.cruder.excellent.util;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.List;
 
 /**
- * ExcelField: Annotation of excel field.
+ * Converter: Row data converter.
  *
  * @author cruder
- * @since 2019-04-17
+ * @since 2019-04-11
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface ExcelField {
+@FunctionalInterface
+public interface Converter {
 
     /**
-     * @return Title in excel
+     * Convert row data to specified class object
+     *
+     * @param headers  header name list
+     * @param rowCells value of each row cell
+     * @param clazz    class to be converted
+     * @return class object
      */
-    String title() default "";
+    <T> T convert(List<String> headers, List<String> rowCells, Class<T> clazz);
 
-    /**
-     * @return Column order in excel
-     */
-    int order() default 1;
 }

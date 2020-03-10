@@ -15,10 +15,11 @@
 
 package io.cruder.excellent;
 
+import io.cruder.excellent.util.Converter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -31,11 +32,28 @@ import java.util.stream.StreamSupport;
 interface Reader<T> extends Iterable<T> {
 
     /**
-     * Flag excel has head.
+     * Take first row as head, if this works, headers from {@link Reader#headers(String...)} will be removed.
+     * <p>Only first sheet's first row will be taken as headers and other sheet's first row will be skipped.<p/>
      *
      * @return reader
      */
-    Reader<T> withHead();
+    Reader<T> firstRowAsHeader();
+
+    /**
+     * Flag excel has head.
+     *
+     * @param head head name.
+     * @return reader
+     */
+    Reader<T> headers(String... head);
+
+    /**
+     * Set row converter.
+     *
+     * @param converter row converter.
+     * @return reader
+     */
+    Reader<T> converter(Converter converter);
 
     /**
      * Read one row.
@@ -45,30 +63,7 @@ interface Reader<T> extends Iterable<T> {
     Optional<T> readRow();
 
     /**
-     * Read rows for specified row amount.
-     *
-     * @param rowNum row amount
-     * @return optional multiple rows.
-     */
-    Optional<List<T>> readRow(int rowNum);
-
-    /**
-     * Iterate excel data one by one and do extra something.
-     *
-     * @param consumer extra operation.
-     */
-    @Deprecated
-    default void iterateThen(Consumer<T> consumer) {
-        Optional<T> optional = readRow();
-        if (!optional.isPresent()) {
-            return;
-        }
-        consumer.accept(optional.get());
-        this.iterateThen(consumer);
-    }
-
-    /**
-     * Read all rows.
+     * Read all rows. If excel contains large data, may cause OOM.
      *
      * @return optional all rows.
      */

@@ -15,16 +15,14 @@
 
 package io.cruder.excellent;
 
-import io.cruder.excellent.util.DefaultRowConverter;
-import io.cruder.excellent.util.RowConverter;
+import io.cruder.excellent.util.DefaultConverter;
+import io.cruder.excellent.util.Converter;
 import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * AbstractExcelReader: Abstract implement excel reader.
@@ -38,52 +36,101 @@ public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> 
     /**
      * Row class.
      */
-    @Setter
     @Getter
     @Accessors(chain = true)
-    protected Class<T> parameterType;
+    protected Class<T> parameterizedType;
 
     /**
      * Data head.
      */
-    protected List<String> heads = new ArrayList<>();
+    protected List<String> headers = new ArrayList<>();
 
     /**
      * If excel has head, take 1st row as head information.
      */
-    protected boolean hasHead = false;
+    protected boolean firstRowAsHeader = false;
 
     /**
      * Row data converter.
      */
-    protected RowConverter converter = DefaultRowConverter.INSTANCE;
+    protected Converter converter = DefaultConverter.INSTANCE;
 
     /**
      * Numbers of alphabetic letter.
      */
     private final int ALPHABETIC_LETTER_NUMBERS = 26;
 
-    /**
-     * Flag excel has head.
-     *
-     * @return reader
-     */
     @Override
-    public AbstractExcelReader<T> withHead() {
-        this.hasHead = true;
+    public Reader<T> firstRowAsHeader() {
+        firstRowAsHeader = true;
         return this;
     }
 
-    /**
-     * Set row data converter.
-     *
-     * @return reader
-     */
-    public AbstractExcelReader<T> withConverter(RowConverter converter) {
+    @Override
+    public Reader<T> headers(String... header) {
+        if (header != null && header.length > 0) {
+            headers.addAll(Arrays.asList(header));
+        }
+        return this;
+    }
+
+    @Override
+    public Reader<T> converter(Converter converter) {
         this.converter = converter;
         return this;
     }
 
+    /**
+     * Do read operation.
+     *
+     * @return a row.
+     */
+    public abstract T doRead();
+
+    @Override
+    public Optional<T> readRow() {
+        return Optional.ofNullable(doRead());
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new Iterator<T>() {
+
+            /**
+             * current row.
+             */
+            private T curr;
+
+            /**
+             * If there is next record.
+             */
+            private boolean hasNext = true;
+
+            @Override
+            public boolean hasNext() {
+                Optional<T> optional = readRow();
+                hasNext = optional.isPresent();
+                if (hasNext) {
+                    curr = optional.get();
+                }
+                return hasNext;
+            }
+
+            @Override
+            public T next() {
+                if (!hasNext) {
+                    throw new NoSuchElementException();
+                } else {
+                    if (curr == null && !hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                }
+                T prev = curr;
+                curr = null;
+                return prev;
+            }
+        };
+    }
     /**
      * Convert non-negative number which less than 676 to letter.
      *

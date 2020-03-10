@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * TestExcel03Reader: ExcelField 2003 reader test cases.
@@ -35,7 +36,10 @@ public class TestExcellent03Reader {
      */
     @Test
     public void readerTest() {
-        Excellent.open("D:\\test.xls").forEach(t -> {});
+        Excellent.open("D:\\test.xls")
+                .firstRowAsHeader()
+//                .headers("A", "B", "C")
+                .forEach(t -> log.info("{}", t));
     }
 
     /**
@@ -45,9 +49,8 @@ public class TestExcellent03Reader {
     public void excelTypeTest() throws IOException {
 
 //        ExcelReader<Excel03Reader> open = ExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
-        Reader<Object> open = Excellent.open("D:\\test.xls");
-        open.readRow();
-        open.readRow();
+        Reader<Map<String, String>> open = Excellent.open("D:\\test.xls").headers("A", "B", "C");
+        open.readAll().ifPresent(maps -> log.info("{}", maps));
     }
 
     /**

@@ -26,7 +26,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
+import java.util.Arrays;
 
 import static org.apache.poi.hssf.model.InternalWorkbook.WORKBOOK_DIR_ENTRY_NAMES;
 
@@ -70,11 +70,9 @@ public class HssfEventFactory {
     private boolean abort = false;
 
     /**
-     * Creates a new instance of HSSFEventFactory
+     * If current row is first row in current sheet.
      */
-    public HssfEventFactory() {
-        // no instance fields
-    }
+    private boolean firstSheetRow = false;
 
     /**
      * Creates a new instance of HSSFEventFactory
@@ -88,10 +86,10 @@ public class HssfEventFactory {
     }
 
     /**
-     * Read next row.
+     * Process one row.
      */
     @SneakyThrows
-    public void nextRow() {
+    public void process() {
         abort = false;
         processWorkbookEvents(request, poifsFileSystem.getRoot());
     }
@@ -103,22 +101,13 @@ public class HssfEventFactory {
      * @param dir a DirectoryNode containing your workbook
      * @throws IOException if the workbook contained errors
      */
-    public void processWorkbookEvents(HssfRequest req, DirectoryNode dir) throws IOException {
-        // some old documents have "WORKBOOK" or "BOOK"
-        String name = null;
-        Set<String> entryNames = dir.getEntryNames();
-        for (String potentialName : WORKBOOK_DIR_ENTRY_NAMES) {
-            if (entryNames.contains(potentialName)) {
-                name = potentialName;
-                break;
-            }
-        }
-        // If in doubt, go for the default
-        if (name == null) {
-            name = WORKBOOK_DIR_ENTRY_NAMES[0];
-        }
-
+    private void processWorkbookEvents(HssfRequest req, DirectoryNode dir) throws IOException {
         if (inputStream == null) {
+            String name = Arrays.stream(WORKBOOK_DIR_ENTRY_NAMES)
+                    .filter(potentialName -> dir.getEntryNames().contains(potentialName))
+                    .findAny()
+                    // Default entry name "Workbook".
+                    .orElse(WORKBOOK_DIR_ENTRY_NAMES[0]);
             inputStream = dir.createDocumentInputStream(name);
         }
         processEvents(req, inputStream);
@@ -135,7 +124,7 @@ public class HssfEventFactory {
      * @param in  a DocumentInputStream obtained from POIFS's POIFSFileSystem object
      * @see org.apache.poi.poifs.filesystem.POIFSFileSystem#createDocumentInputStream(String)
      */
-    public void processEvents(HssfRequest req, InputStream in) {
+    private void processEvents(HssfRequest req, InputStream in) {
         try {
             genericProcessEvents(req, in);
         } catch (HSSFUserException hue) {
@@ -153,7 +142,7 @@ public class HssfEventFactory {
     private void genericProcessEvents(HssfRequest req, InputStream in)
             throws HSSFUserException {
 
-        short userCode = 0;
+        short userCode;
 
         // Create a new RecordStream and use that
         if (recordStream == null) {
@@ -179,7 +168,6 @@ public class HssfEventFactory {
             }
         }
 
-        // All done, return our last code
     }
 
     /**
@@ -194,5 +182,26 @@ public class HssfEventFactory {
      */
     public void abort() {
         this.abort = true;
+    }
+
+    /**
+     * @return If current sheet is new work sheet.
+     */
+    public boolean isFirstRow() {
+        return firstSheetRow;
+    }
+
+    /**
+     * Entry sheet to process first row.
+     */
+    public void entryFirstRow() {
+        this.firstSheetRow = true;
+    }
+
+    /**
+     * Do something when process one row.
+     */
+    public void leaveFirstRow() {
+        this.firstSheetRow = false;
     }
 }
