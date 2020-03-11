@@ -18,6 +18,7 @@ package io.cruder.excellent.hssf;
 import io.cruder.excellent.AbstractExcelReader;
 import io.cruder.excellent.hssf.eventusermodel.HssfEventFactory;
 import io.cruder.excellent.hssf.eventusermodel.HssfRequest;
+import io.cruder.excellent.util.Constant;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.eventusermodel.EventWorkbookBuilder.SheetRecordCollectingListener;
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
@@ -28,6 +29,7 @@ import org.apache.poi.hssf.model.HSSFFormulaParser;
 import org.apache.poi.hssf.record.*;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.ss.usermodel.DateUtil;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -69,12 +71,9 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
      * For handling formulas with string results
      */
     private boolean outputNextStringRecord;
-    /**
-     * A row.
-     */
-    private int rowIndex = 0;
-    private List<String> rowCells = new ArrayList<>();
+
     private T currRow;
+    private List<String> rowCells = new ArrayList<>();
 
     /**
      * Creates a new XLS -> CSV converter
@@ -143,8 +142,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                         orderedBsrArray = BoundSheetRecord.orderByBofPosition(boundSheetRecords);
                     }
                     HSSF.entryFirstRow();
-                    rowIndex = 0;
-//                    log.info(orderedBsrArray[sheetIndex].getSheetname() + " [" + (sheetIndex + 1) + "]:");
+                    //                    log.info(orderedBsrArray[sheetIndex].getSheetname() + " [" + (sheetIndex + 1) + "]:");
                 }
                 break;
 
@@ -155,19 +153,22 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
             case BlankRecord.sid:
             case BoolErrRecord.sid:
 
-                cellValue = "";
+                cellValue = Constant.EMPTY;
                 break;
 
             case FormulaRecord.sid:
                 FormulaRecord frec = (FormulaRecord) record;
-
                 if (outputFormulaValues) {
                     if (Double.isNaN(frec.getValue())) {
                         // Formula result is a string
                         // This is stored in the next record
                         outputNextStringRecord = true;
                     } else {
-                        cellValue = formatListener.formatNumberDateCell(frec);
+                        if (DateUtil.isADateFormat(formatListener.getFormatIndex(frec), formatListener.getFormatString(frec))) {
+                            cellValue = String.valueOf(frec.getValue());
+                        } else {
+                            cellValue = formatListener.formatNumberDateCell(frec);
+                        }
                     }
                 } else {
                     cellValue = HSSFFormulaParser.toFormulaString(stubWorkbook, frec.getParsedExpression());
@@ -204,9 +205,12 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
                 break;
             case NumberRecord.sid:
                 NumberRecord numrec = (NumberRecord) record;
-
                 // Format
-                cellValue = formatListener.formatNumberDateCell(numrec);
+                if (DateUtil.isADateFormat(formatListener.getFormatIndex(numrec), formatListener.getFormatString(numrec))) {
+                    cellValue = String.valueOf(numrec.getValue());
+                } else {
+                    cellValue = formatListener.formatNumberDateCell(numrec);
+                }
                 break;
             default:
                 break;
@@ -214,7 +218,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
 
         // Handle missing column
         if (record instanceof MissingCellDummyRecord) {
-            cellValue = "";
+            cellValue = Constant.EMPTY;
         }
 
         // If we got something to print out, do so
@@ -226,7 +230,6 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
         if (record instanceof LastCellOfRowDummyRecord) {
 
             // We're onto a new row
-            rowIndex++;
             HSSF.abort();
             // End the row
             if (firstRowAsHeader && HSSF.isSheetFirstRow() && sheetIndex == 0) {

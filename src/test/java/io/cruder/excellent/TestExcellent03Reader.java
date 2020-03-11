@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -69,9 +69,10 @@ public class TestExcellent03Reader {
     @Data
     public static class TestBean {
         private String name;
-        private int age;
+        private double age;
         private String remark;
-        private Date date;
+        @ExcelColumn(format = "yyyyMMdd HH:mm:ss")
+        private LocalDateTime date;
     }
 
 }

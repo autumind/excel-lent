@@ -29,9 +29,9 @@ public interface Converter {
     /**
      * Convert row data to specified class object
      *
-     * @param headers  header name list
-     * @param rowCells value of each row cell
-     * @param clazz    class to be converted
+     * @param headers     header name list
+     * @param rowCells    value of each row cell
+     * @param clazz       class to be converted
      * @return class object
      */
     <T> T convert(List<String> headers, List<String> rowCells, Class<T> clazz);
