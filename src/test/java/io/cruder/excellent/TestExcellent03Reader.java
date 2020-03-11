@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -36,10 +37,12 @@ public class TestExcellent03Reader {
      */
     @Test
     public void readerTest() {
-        Excellent.open("D:\\test.xls")
+        Excellent.open("D:\\test.xls", TestBean.class)
                 .firstRowAsHeader()
+                .forEach(bean -> log.info("{}", bean));
 //                .headers("A", "B", "C")
-                .forEach(t -> log.info("{}", t));
+//                .readAll()
+//                .ifPresent(beans -> log.info("{}", beans ));
     }
 
     /**
@@ -64,8 +67,11 @@ public class TestExcellent03Reader {
     }
 
     @Data
-    private static class TestBean {
-        private String id;
+    public static class TestBean {
+        private String name;
+        private int age;
+        private String remark;
+        private Date date;
     }
 
 }

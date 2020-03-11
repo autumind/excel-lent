@@ -20,7 +20,16 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +69,8 @@ public enum DefaultConverter implements Converter {
 
             if (clazz == null) {
                 Map<String, String> map = new LinkedHashMap<>();
-                headerIndex.forEach((header, index) -> map.put(header, rowCells.size() > index ? rowCells.get(index) : ""));
+                headerIndex.forEach((header, index) -> map.put(header,
+                        rowCells.size() > index ? rowCells.get(index) : Constant.EMPTY));
                 return (T) map;
             }
 
@@ -72,10 +82,19 @@ public enum DefaultConverter implements Converter {
                 titledMethods = classSetterCache.get(cachedKey);
             } else {
                 titledMethods = Stream.of(clazz.getDeclaredFields())
-                        .filter(field -> field.isAnnotationPresent(Column.class))
-                        .map(field -> new TitledMethod()
-                                .setTitle(field.getAnnotation(Column.class).title())
-                                .setMethod(Reflects.resolveSetter(field, clazz)))
+                        .map(field -> {
+                            String title = field.getName();
+                            String format = null;
+                            if (field.isAnnotationPresent(Column.class)) {
+                                Column column = field.getAnnotation(Column.class);
+                                title = column.title();
+                                format = column.format();
+                            }
+                            return new TitledMethod()
+                                    .setTitle(title)
+                                    .setFormat(format)
+                                    .setMethod(Reflects.resolveSetter(field, clazz));
+                        })
                         .collect(Collectors.toList());
                 classSetterCache.put(cachedKey, titledMethods);
             }
@@ -92,12 +111,11 @@ public enum DefaultConverter implements Converter {
                     throw new RuntimeException(String.format("Method %s is not a setter.", method.getName()));
                 }
                 Class parameterType = parameterTypes[0];
-                Object val = rowCells.get(headerIndex.get(titledMethod.getTitle()));
+                Integer index = headerIndex.get(titledMethod.getTitle());
+                String val = index < rowCells.size() ? rowCells.get(index) : null;
                 if (val != null) {
-                    // invoke setter only when cell value is not null.
-                    if (parameterType.equals(String.class)) {
-                        method.invoke(bean, String.valueOf(val));
-                    }
+                    // Invoke setter only when cell value is not null.
+                    doInvocation(bean, titledMethod, parameterType, val);
                 }
             }
 
@@ -105,6 +123,81 @@ public enum DefaultConverter implements Converter {
             log.error("Convert excel row value to java object failure.", e);
         }
         return bean;
+    }
+
+    /**
+     * Invoke bean set method to fill value.
+     *
+     * @param bean          bean
+     * @param titledMethod  titled method
+     * @param parameterType parameter type of set method
+     * @param val           value
+     */
+    private <T> void doInvocation(T bean, TitledMethod titledMethod, Class<?> parameterType, String val)
+            throws IllegalAccessException, InvocationTargetException, NoSuchMethodException, InstantiationException {
+        Method method = titledMethod.getMethod();
+        if (parameterType.equals(String.class) || parameterType.equals(Object.class)) {
+            method.invoke(bean, val);
+        } else if (Number.class.isAssignableFrom(parameterType)) {
+            Constructor constructor = parameterType.getConstructor(String.class);
+            if (constructor == null) {
+                return;
+            }
+            if (parameterType.equals(Byte.class) || !val.isEmpty()) {
+                method.invoke(bean, constructor.newInstance(val));
+            }
+        } else if (parameterType.isPrimitive()) {
+            if (parameterType.equals(Void.TYPE)) {
+                throw new RuntimeException("Field's type of target class must not be Void.class");
+            }
+            if (parameterType.equals(Character.TYPE)) {
+                throw new RuntimeException("Please use String to replace field's type Character.class");
+            }
+            if (parameterType.equals(Byte.TYPE)) {
+                method.invoke(bean, new Byte(val));
+            }
+            if (parameterType.equals(Short.TYPE) && !val.isEmpty()) {
+                method.invoke(bean, new Short(val));
+            }
+            if (parameterType.equals(Integer.TYPE) && !val.isEmpty()) {
+                method.invoke(bean, new Integer(val));
+            }
+            if (parameterType.equals(Long.TYPE) && !val.isEmpty()) {
+                method.invoke(bean, new Long(val));
+            }
+            if (parameterType.equals(Float.TYPE) && !val.isEmpty()) {
+                method.invoke(bean, new Float(val));
+            }
+            if (parameterType.equals(Double.TYPE) && !val.isEmpty()) {
+                method.invoke(bean, new Double(val));
+            }
+        } else if (parameterType.equals(BigDecimal.class)) {
+            if (val.isEmpty()) {
+                return;
+            }
+            method.invoke(bean, new BigDecimal(val));
+        } else if (parameterType.equals(Date.class)) {
+            String format = titledMethod.getFormat();
+            if (format == null) {
+                format = Constant.DEFAULT_DATETIME_FORMAT;
+            }
+            Instant instant = LocalDateTime.parse(val, DateTimeFormatter.ofPattern(format))
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant();
+            method.invoke(bean, Date.from(instant));
+        } else if (parameterType.equals(LocalDateTime.class)) {
+            String format = titledMethod.getFormat();
+            if (format == null) {
+                format = Constant.DEFAULT_DATETIME_FORMAT;
+            }
+            method.invoke(bean, LocalDateTime.parse(val, DateTimeFormatter.ofPattern(format)));
+        } else if (parameterType.equals(LocalDate.class)) {
+            String format = titledMethod.getFormat();
+            if (format == null) {
+                format = Constant.DEFAULT_DATE_FORMAT;
+            }
+            method.invoke(bean, LocalDateTime.parse(val, DateTimeFormatter.ofPattern(format)));
+        }
     }
 
     /**
@@ -117,12 +210,17 @@ public enum DefaultConverter implements Converter {
     @Accessors(chain = true)
     private static class TitledMethod {
         /**
-         * method title
+         * Method title
          */
         private String title;
 
         /**
-         * method
+         * Format
+         */
+        private String format;
+
+        /**
+         * Method
          */
         private Method method;
     }

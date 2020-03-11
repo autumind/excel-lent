@@ -185,9 +185,9 @@ public class HssfEventFactory {
     }
 
     /**
-     * @return If current sheet is new work sheet.
+     * @return If current row is first row in current sheet.
      */
-    public boolean isFirstRow() {
+    public boolean isSheetFirstRow() {
         return firstSheetRow;
     }
 

@@ -83,8 +83,8 @@ public class Reflects {
     public static Method resolveSetter(Field field, Class clz) {
         String fieldName = field.getName();
         char[] chars = fieldName.toCharArray();
-        if (chars[0] <= 'z' && chars[0] >= 'a') {
-            chars[0] = (char) (chars[0] + 'A' - 'a');
+        if (chars[0] <= Constant.z && chars[0] >= Constant.a) {
+            chars[0] = (char) (chars[0] + Constant.A - Constant.a);
         }
         String setterName = SET_PREFIX.concat(String.valueOf(chars));
         return Stream.of(clz.getDeclaredMethods())

@@ -229,7 +229,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
             rowIndex++;
             HSSF.abort();
             // End the row
-            if (firstRowAsHeader && HSSF.isFirstRow() && sheetIndex == 0) {
+            if (firstRowAsHeader && HSSF.isSheetFirstRow() && sheetIndex == 0) {
                 headers.addAll(rowCells);
             } else {
                 // Convert cell to entity.
@@ -245,7 +245,7 @@ public class XlsReader<T> extends AbstractExcelReader<T> implements Cloneable {
         boolean hasNext = HSSF.hasNext();
         if (hasNext) {
             HSSF.process();
-            if (HSSF.isFirstRow()) {
+            if (HSSF.isSheetFirstRow()) {
                 HSSF.leaveFirstRow();
                 if (firstRowAsHeader) {
                     HSSF.process();

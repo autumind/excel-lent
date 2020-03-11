@@ -15,8 +15,9 @@
 
 package io.cruder.excellent;
 
-import io.cruder.excellent.util.DefaultConverter;
+import io.cruder.excellent.util.Constant;
 import io.cruder.excellent.util.Converter;
+import io.cruder.excellent.util.DefaultConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -54,11 +55,6 @@ public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> 
      * Row data converter.
      */
     protected Converter converter = DefaultConverter.INSTANCE;
-
-    /**
-     * Numbers of alphabetic letter.
-     */
-    private final int ALPHABETIC_LETTER_NUMBERS = 26;
 
     @Override
     public Reader<T> firstRowAsHeader() {
@@ -142,14 +138,15 @@ public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> 
             throw new IllegalArgumentException();
         }
 
-        if ((i + 1) / ALPHABETIC_LETTER_NUMBERS > ALPHABETIC_LETTER_NUMBERS) {
+        if ((i + 1) / Constant.ALPHABETIC_LETTER_NUMBERS > Constant.ALPHABETIC_LETTER_NUMBERS) {
             throw new IllegalArgumentException("Too many columns, please decrease some useless column and retry.");
         }
 
-        if (i / ALPHABETIC_LETTER_NUMBERS == 0) {
-            return String.valueOf((char) (i + 'A'));
+        if (i / Constant.ALPHABETIC_LETTER_NUMBERS == 0) {
+            return String.valueOf((char) (i + Constant.A));
         } else {
-            return String.valueOf((char) (i / ALPHABETIC_LETTER_NUMBERS + 'A' - 1)).concat(String.valueOf((char) (i % 26 + 'A')));
+            return String.valueOf((char) (i / Constant.ALPHABETIC_LETTER_NUMBERS + Constant.A - 1))
+                    .concat(String.valueOf((char) (i % Constant.ALPHABETIC_LETTER_NUMBERS + Constant.A)));
         }
     }
 }

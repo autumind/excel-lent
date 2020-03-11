@@ -31,12 +31,17 @@ import java.lang.annotation.Target;
 public @interface Column {
 
     /**
-     * @return Title in excel
+     * @return Title in excel.
      */
     String title() default "";
 
     /**
-     * @return Column order in excel
+     * @return Column order in excel.
      */
     int order() default 1;
+
+    /**
+     * @return Format, like {@link java.util.Date}.
+     */
+    String format() default "";
 }
