@@ -16,9 +16,11 @@
 package io.cruder.excellent;
 
 import lombok.Data;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -30,19 +32,33 @@ import java.util.Map;
  * @since 2019-03-25
  */
 @Slf4j
-public class TestExcellent03Reader {
+public class TestExcel03Reader {
 
     /**
      * Test reader
      */
     @Test
     public void readerTest() {
-        Excellent.open("D:\\test.xls", TestBean.class)
+        Excel.lent("D:\\test.xls", TestBean.class)
                 .firstRowAsHeader()
                 .forEach(bean -> log.info("{}", bean));
 //                .headers("A", "B", "C")
 //                .readAll()
 //                .ifPresent(beans -> log.info("{}", beans ));
+    }
+
+    /**
+     * Test reader
+     */
+    @Test
+    @SneakyThrows
+    public void xlsxReaderTest() {
+//        Excel.lent("D:\\test.xlsx", TestBean.class).readAll();
+        Excel.lent(null, new FileInputStream("D:\\test.xlsx"), TestBean.class)
+                .firstRowAsHeader()
+                .readAll()
+                .ifPresent(list -> log.info("{}", list));
+
     }
 
     /**
@@ -52,7 +68,7 @@ public class TestExcellent03Reader {
     public void excelTypeTest() throws IOException {
 
 //        ExcelReader<Excel03Reader> open = ExcelReader.open(new File("D:\\test.xls"), Excel03Reader.class);
-        Reader<Map<String, String>> open = Excellent.open("D:\\test.xls").headers("A", "B", "C");
+        Reader<Map<String, String>> open = Excel.lent("D:\\test.xls").headers("A", "B", "C");
         open.readAll().ifPresent(maps -> log.info("{}", maps));
     }
 

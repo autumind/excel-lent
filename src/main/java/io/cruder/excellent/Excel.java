@@ -18,10 +18,14 @@ package io.cruder.excellent;
 import io.cruder.excellent.exception.FileNotSupportedException;
 import io.cruder.excellent.hssf.XlsReader;
 import io.cruder.excellent.util.ExcelTypeEnum;
+import io.cruder.excellent.xssf.XlsxReader;
 import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -31,15 +35,15 @@ import java.util.Map;
  * @since 2020-03-02
  */
 @UtilityClass
-public class Excellent {
+public class Excel {
     /**
      * Open excel reader.
      *
      * @param file file
      * @return ExcelField reader.
      */
-    public static Reader<Map<String, String>> open(String file) {
-        return open(file, null);
+    public static Reader<Map<String, String>> lent(String file) {
+        return lent(file, null);
     }
 
     /**
@@ -50,8 +54,8 @@ public class Excellent {
      * @return ExcelField reader.
      */
     @SneakyThrows
-    public static <E> Reader<E> open(String file, Class<E> clazz) {
-        return open(new FileInputStream(file), clazz);
+    public static <E> Reader<E> lent(String file, Class<E> clazz) {
+        return lent(file, new FileInputStream(file), clazz);
     }
 
     /**
@@ -60,8 +64,8 @@ public class Excellent {
      * @param file file
      * @return ExcelField reader.
      */
-    public static Reader<Map<String, String>> open(File file) {
-        return open(file, null);
+    public static Reader<Map<String, String>> lent(File file) {
+        return lent(file, null);
     }
 
     /**
@@ -72,8 +76,8 @@ public class Excellent {
      * @return ExcelField reader.
      */
     @SneakyThrows
-    public static <E> Reader<E> open(File file, Class<E> clazz) {
-        return open(new FileInputStream(file), clazz);
+    public static <E> Reader<E> lent(File file, Class<E> clazz) {
+        return lent(file.getPath(), new FileInputStream(file), clazz);
     }
 
     /**
@@ -83,27 +87,31 @@ public class Excellent {
      * @return ExcelField reader.
      */
     @SneakyThrows
-    public static Reader<Map<String, String>> open(InputStream inputStream) {
-        return open(inputStream, null);
+    public static Reader<Map<String, String>> lent(InputStream inputStream) {
+        return lent(null, inputStream, null);
     }
 
     /**
      * Open excel reader.
      *
+     * @param filePath    file path
      * @param inputStream input stream
      * @param clazz       target class
+     * @param <E>
      * @return ExcelField reader.
      */
-    public static <E> Reader<E> open(InputStream inputStream, Class<E> clazz) {
+    public static <E> Reader<E> lent(String filePath, InputStream inputStream, Class<E> clazz) {
         try (BufferedInputStream bis = new BufferedInputStream(inputStream)) {
             ExcelTypeEnum type = ExcelTypeEnum.valueOf(bis);
             if (type == ExcelTypeEnum.XLS) {
                 return new XlsReader<>(bis, clazz);
+            } else if (type == ExcelTypeEnum.XLSX) {
+                return new XlsxReader<>(filePath, bis, clazz);
             } else {
                 return null;
             }
-        } catch (IOException e) {
-            throw new FileNotSupportedException("The file inputStream not xls or xlsx or csv, please re-select.");
+        } catch (Exception e) {
+            throw new FileNotSupportedException("The file not xls or xlsx or csv, please re-select.", e);
         }
     }
 

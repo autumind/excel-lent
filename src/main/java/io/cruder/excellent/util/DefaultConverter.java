@@ -62,6 +62,7 @@ public enum DefaultConverter implements Converter {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T convert(List<String> headers, List<String> rowCells, Class<T> clazz) {
+        // todo headers may be from clazz.
         T bean = null;
         Map<String, Integer> headerIndex = IntStream.range(0, headers.size())
                 .boxed()

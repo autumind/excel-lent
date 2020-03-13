@@ -21,7 +21,6 @@ import io.cruder.excellent.util.DefaultConverter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import org.apache.poi.hssf.eventusermodel.HSSFListener;
 
 import java.util.*;
 
@@ -32,32 +31,35 @@ import java.util.*;
  * @since 2019-04-11
  */
 @Data
-public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> {
-
-    /**
-     * Row class.
-     */
-    @Getter
-    @Accessors(chain = true)
-    protected Class<T> parameterizedType;
+public abstract class AbstractExcelReader<T> implements Reader<T> {
 
     /**
      * Data head.
      */
     protected List<String> headers = new ArrayList<>();
-
     /**
      * If excel has head, take 1st row as head information.
      */
     protected boolean firstRowAsHeader = false;
-
+    protected boolean headerConfirmed = false;
     /**
      * Row data converter.
      */
     protected Converter converter = DefaultConverter.INSTANCE;
+    /**
+     * Row class.
+     */
+    @Getter
+    @Accessors(chain = true)
+    private Class<T> parameterizedType;
+
+    public AbstractExcelReader(Class<T> parameterizedType) {
+        this.parameterizedType = parameterizedType;
+    }
 
     @Override
     public Reader<T> firstRowAsHeader() {
+        headerConfirmed = false;
         firstRowAsHeader = true;
         return this;
     }
@@ -65,6 +67,7 @@ public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> 
     @Override
     public Reader<T> headers(String... header) {
         if (header != null && header.length > 0) {
+            headerConfirmed = true;
             headers.addAll(Arrays.asList(header));
         }
         return this;
@@ -127,6 +130,7 @@ public abstract class AbstractExcelReader<T> implements HSSFListener, Reader<T> 
             }
         };
     }
+
     /**
      * Convert non-negative number which less than 676 to letter.
      *
