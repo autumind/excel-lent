@@ -68,21 +68,21 @@ public class XlsxReader<T> extends AbstractExcelReader<T> implements XSSFSheetXM
      * XSSF
      */
     private OPCPackage opc;
-    private String tempFilePath = "/tmp/excel/lent/";
+    private final static String TEMP_FILE_PATH = "/tmp/excel/lent/";
     private BlockingQueue<List<String>> cachedRows = new LinkedBlockingQueue<>(10);
 
     /**
      * Current
      */
     private String currentFilePath;
-    private CompletableFuture<?> currentFuture;
     private List<String> rowCells = new ArrayList<>();
+    private CompletableFuture<?> readFuture;
 
     public XlsxReader(String filePath, InputStream inputStream, Class<T> clazz) throws OpenXML4JException, IOException {
         super(clazz);
 
         if (filePath == null || filePath.isEmpty()) {
-            currentFilePath = tempFilePath
+            currentFilePath = TEMP_FILE_PATH
                     .concat(clazz.getSimpleName())
                     .concat(String.valueOf(System.currentTimeMillis()));
             File destFile = new File(currentFilePath);
@@ -92,9 +92,14 @@ public class XlsxReader<T> extends AbstractExcelReader<T> implements XSSFSheetXM
             currentFilePath = filePath;
         }
         opc = OPCPackage.open(currentFilePath, PackageAccess.READ);
+        startRead();
+    }
 
-
-        currentFuture = CompletableFuture.runAsync(() -> {
+    /**
+     * Start read file asynchronously.
+     */
+    private void startRead() {
+        readFuture = CompletableFuture.runAsync(() -> {
             XSSFReader xssfReader;
             try {
                 xssfReader = new XSSFReader(opc);
@@ -115,7 +120,7 @@ public class XlsxReader<T> extends AbstractExcelReader<T> implements XSSFSheetXM
                     }
                 }
             } catch (IOException | OpenXML4JException | SAXException | ParserConfigurationException e) {
-                e.printStackTrace();
+                log.info("Read xlsx file failure by sax.", e);
             }
         }, EXECUTOR);
     }
@@ -129,13 +134,15 @@ public class XlsxReader<T> extends AbstractExcelReader<T> implements XSSFSheetXM
     @Override
     @SneakyThrows
     public T doRead() {
-        if (!currentFuture.isDone() || !cachedRows.isEmpty()) {
+
+        if (!readFuture.isDone() || !cachedRows.isEmpty()) {
             List<String> rowCells = cachedRows.take();
             if (firstRowAsHeader && !headerConfirmed) {
                 headerConfirmed = true;
                 headers.addAll(rowCells);
                 return doRead();
             }
+            String str = "http://www.baidu.com";
             return getConverter().convert(headers, rowCells, getParameterizedType());
         } else {
             // Delete temp file.
